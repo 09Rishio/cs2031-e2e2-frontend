@@ -11,13 +11,23 @@ function RequestTripPage() {
   const [dropoffAddress, setDropoffAddress] = useState("");
   const [error, setError] = useState("");
 
+  function getApiError(err: any, fallback: string) {
+    const data = err.response?.data;
+
+    return (
+      data?.error ||
+      Object.values(data || {}).join(", ") ||
+      fallback
+    );
+  }
+
   useEffect(() => {
     async function loadDrivers() {
       try {
         const data = await getAvailableDrivers();
         setDrivers(data);
-      } catch {
-        setError("No se pudieron cargar los conductores disponibles.");
+      } catch (err: any) {
+        setError(getApiError(err, "No se pudieron cargar los conductores disponibles."));
       }
     }
 
@@ -37,7 +47,7 @@ function RequestTripPage() {
       const trip = await createTrip({ pickupAddress, dropoffAddress });
       navigate(`/trips/${trip.id}`);
     } catch (err: any) {
-      setError(err.response?.data?.error || "No se pudo crear el viaje.");
+      setError(getApiError(err, "No se pudo crear el viaje."));
     }
   }
 

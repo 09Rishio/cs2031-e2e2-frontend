@@ -14,6 +14,16 @@ function TripDetailPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  function getApiError(err: any, fallback: string) {
+    const data = err.response?.data;
+
+    return (
+      data?.error ||
+      Object.values(data || {}).join(", ") ||
+      fallback
+    );
+  }
+
   async function loadTrip() {
     if (!id) return;
 
@@ -23,8 +33,8 @@ function TripDetailPage() {
 
       setUser(currentUser);
       setTrip(tripData);
-    } catch {
-      setError("No se pudo cargar el detalle del viaje.");
+    } catch (err: any) {
+      setError(getApiError(err, "No se pudo cargar el detalle del viaje."));
     }
   }
 
@@ -46,14 +56,18 @@ function TripDetailPage() {
 
   async function handleRate(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     if (!trip) return;
 
     try {
+      setError("");
+      setSuccess("");
+
       const updatedTrip = await rateTrip(trip.id, { rating, comment });
       setTrip(updatedTrip);
       setSuccess("Viaje calificado correctamente.");
     } catch (err: any) {
-      setError(err.response?.data?.error || "No se pudo calificar el viaje.");
+      setError(getApiError(err, "No se pudo calificar el viaje."));
     }
   }
 
@@ -61,11 +75,14 @@ function TripDetailPage() {
     if (!trip) return;
 
     try {
+      setError("");
+      setSuccess("");
+
       const updatedTrip = await completeTrip(trip.id);
       setTrip(updatedTrip);
       setSuccess("Viaje completado correctamente.");
     } catch (err: any) {
-      setError(err.response?.data?.error || "No se pudo completar el viaje.");
+      setError(getApiError(err, "No se pudo completar el viaje."));
     }
   }
 
@@ -93,6 +110,8 @@ function TripDetailPage() {
         <p>Estado: {trip.status}</p>
         <p>Origen: {trip.pickupAddress}</p>
         <p>Destino: {trip.dropoffAddress}</p>
+        <p>Aceptado: {trip.acceptedAt ?? "Aún no aceptado"}</p>
+        <p>Completado: {trip.completedAt ?? "Aún no completado"}</p>
 
         <h3>Pasajero</h3>
         <p>
@@ -100,29 +119,20 @@ function TripDetailPage() {
         </p>
 
         <h3>Conductor</h3>
-
-        {trip.driver ? (
-          <>
-            <p>
-              {trip.driver.firstName} {trip.driver.lastName}
-            </p>
-            <p>Rating: {trip.driver.rating}</p>
-          </>
-        ) : (
-          <p>Buscando conductor...</p>
-        )}
+        <p>
+          {trip.driver?.firstName
+            ? `${trip.driver.firstName} ${trip.driver.lastName}`
+            : "Buscando conductor..."}
+        </p>
+        <p>Rating: {trip.driver?.rating ?? "Sin calificación"}</p>
 
         {canComplete && (
           <button onClick={handleComplete}>Completar viaje</button>
         )}
 
-        {trip.passengerRating !== null && (
-          <>
-            <h3>Calificación</h3>
-            <p>Rating: {trip.passengerRating}</p>
-            <p>Comentario: {trip.ratingComment || "Sin comentario"}</p>
-          </>
-        )}
+        <h3>Calificación</h3>
+        <p>Rating: {trip.passengerRating ?? "Sin calificación"}</p>
+        <p>Comentario: {trip.ratingComment || "Sin comentario"}</p>
 
         {canRate && (
           <form onSubmit={handleRate} className="form">

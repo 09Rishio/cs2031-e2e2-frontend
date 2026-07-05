@@ -13,6 +13,16 @@ function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  function getApiError(err: any, fallback: string) {
+    const data = err.response?.data;
+
+    return (
+      data?.error ||
+      Object.values(data || {}).join(", ") ||
+      fallback
+    );
+  }
+
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     setForm({
       ...form,
@@ -31,17 +41,13 @@ function LoginPage() {
 
     try {
       setLoading(true);
-      const data = await login(form);
 
+      const data = await login(form);
       localStorage.setItem("token", data.token);
 
       navigate("/dashboard");
     } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Credenciales incorrectas."
-      );
+      setError(getApiError(err, "Credenciales incorrectas."));
     } finally {
       setLoading(false);
     }

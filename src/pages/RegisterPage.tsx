@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { register } from "../api/authApi";
 import type { Role } from "../types";
 
@@ -17,6 +17,21 @@ function RegisterPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function getApiError(err: any, fallback: string) {
+    const status = err.response?.status;
+    const data = err.response?.data;
+
+    if (status === 500) {
+      return "El correo ya está registrado o los datos no son válidos.";
+    }
+
+    return (
+      data?.error ||
+      Object.values(data || {}).join(", ") ||
+      fallback
+    );
+  }
 
   function handleChange(
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -39,6 +54,7 @@ function RegisterPage() {
 
     try {
       setLoading(true);
+
       await register(form);
       setSuccess("Registro exitoso. Ahora puedes iniciar sesión.");
 
@@ -46,21 +62,7 @@ function RegisterPage() {
         navigate("/login");
       }, 1000);
     } catch (err: any) {
-      const status = err.response?.status;
-      const data = err.response?.data;
-
-      if (status === 500) {
-        setError("El correo ya está registrado o los datos no son válidos.");
-        return;
-      }
-
-      const message =
-        data?.error ||
-        data?.message ||
-        Object.values(data || {}).join(", ") ||
-        "No se pudo registrar el usuario.";
-
-      setError(message);
+      setError(getApiError(err, "No se pudo registrar el usuario."));
     } finally {
       setLoading(false);
     }
